@@ -1,70 +1,71 @@
-#  HeatGuard
+# HeatGuard
 
 ### SIH 2026 — Problem Statement 26083
 
 **Extreme Heatwave Early Warning & Human Thermal Stress Index**
 
-> **Theme:** Disaster Management
-> **Organization:** Ministry of Earth Sciences (MoES) / NCMRWF
-> **Pilot City:** Bengaluru
+**Theme:** Disaster Management
+**Organization:** Ministry of Earth Sciences (MoES) / NCMRWF
+**Pilot City:** Bengaluru
 
 ---
 
-##  What are we building?
+## Overview
 
-HeatGuard is an **impact-based heatwave early warning system** that predicts **how dangerous heat will be for people**, rather than relying only on temperature.
+HeatGuard is an **impact-based heatwave early warning system** designed to assess the potential health impact of extreme heat conditions.
 
-It combines weather, thermal stress, population vulnerability, and health data to produce **localized heat-risk predictions** and recommend actions.
+Instead of relying solely on temperature, the system combines weather variables, thermal stress indices, population vulnerability, and available health data to generate localized heat-risk predictions and actionable recommendations.
 
-### Core idea
+### System Flow
 
 ```text
 Weather Forecast
        ↓
 Temperature + Humidity + Wind + Radiation
        ↓
-   Thermal Stress
-  (WBGT / UTCI / HI)
+Thermal Stress
+(WBGT / UTCI / Heat Index)
        ↓
 Population Vulnerability
        ↓
-   Health Risk
+Health Risk
        ↓
-Ward-Level Alerts & Actions
+Ward-Level Alerts & Recommendations
 ```
 
 ---
 
-##  Key Features
+## Key Features
 
-* 🌡️ **Thermal Stress:** WBGT, UTCI, Heat Index
-* 🗺️ **Ward-Level Risk Map:** Bengaluru
-* 📅 **3–5 Day Forecast:** Predict upcoming risk
-* 👥 **Vulnerability Analysis:** Elderly, outdoor workers, population density
-* 🏥 **Health Risk:** Hospitalization / mortality risk where data permits
-* 🚨 **Action Recommendations:** Cooling centers, work-hour changes, alerts
-* 📡 **API:** Future SMS/WhatsApp/admin integrations
+* Thermal stress calculation using WBGT, UTCI, and Heat Index
+* Ward-level heat-risk mapping for Bengaluru
+* 3–5 day heat-risk forecasting
+* Population vulnerability analysis
+* Consideration of elderly populations, outdoor workers, and population density
+* Health-risk estimation where relevant data is available
+* Action recommendations such as cooling centers and outdoor work-hour adjustments
+* API support for future SMS, WhatsApp, and administrative integrations
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-**Backend:** Python / FastAPI
-**ML:** Pandas, NumPy, Scikit-learn
+**Backend:** Python, FastAPI
+**Machine Learning:** Pandas, NumPy, Scikit-learn
 **Frontend:** React / Next.js
-**Maps:** Leaflet / Mapbox + GeoJSON
+**Maps:** Leaflet / Mapbox, GeoJSON
 **Database:** PostgreSQL / Supabase
-**Weather:** Open-Meteo
+**Weather Data:** Open-Meteo
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 heatguard/
 ├── thermal/       # Thermal stress calculations
-├── data/          # Weather, demographic & health data
-├── backend/       # APIs
+├── data/          # Weather, demographic, and health data
+├── backend/       # API services
 ├── ml/            # Prediction models
 ├── frontend/      # Dashboard
 └── README.md
@@ -72,49 +73,58 @@ heatguard/
 
 ---
 
-## 🚀 MVP
+## Setup
 
-Our hackathon MVP should demonstrate:
+### 1. Create a virtual environment
 
-1. Real Bengaluru weather data
-2. WBGT / Heat Index calculation
-3. Heat-risk scoring
-4. Bengaluru ward-level GIS map
-5. 3–5 day risk forecast
-6. Recommended actions
+```powershell
+python -m venv .venv
+```
 
----
+### 2. Activate the virtual environment
 
-## 💡 What makes it different?
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-We're **not building another weather app.**
+### 3. Install dependencies
 
-> **Weather App:**
-> *"Tomorrow will be 35°C."*
-
-> **HeatGuard:**
-> *"Ward 42 has HIGH heat-health risk tomorrow. Outdoor exposure should be reduced between 12–4 PM."*
-
-### Our goal:
-
-**Move from *“What will the weather be?”* → *“What will the weather do?”***
+```powershell
+pip install -r requirements.txt
+```
 
 ---
 
-## 📌 Current Progress
+## MVP
 
-* ✅ Bengaluru selected as pilot city
-* ✅ Project structure created
-* ✅ Python environment configured
-* ✅ Open-Meteo API connected
-* ✅ Temperature, humidity, wind & radiation retrieved
-* 🔄 **Next: Build the Thermal Stress Engine**
+The hackathon MVP will focus on:
+
+1. Integrating real Bengaluru weather data
+2. Calculating WBGT / Heat Index
+3. Generating a heat-risk score
+4. Displaying ward-level risk using GIS data
+5. Providing a 3–5 day risk forecast
+6. Generating recommended actions based on risk levels
 
 ---
 
-## 👥 Team Focus
+## Current Progress
 
-**Build → Test → Integrate → Demo**
+* Bengaluru selected as the pilot city
+* Initial project structure created
+* Python virtual environment configured
+* Open-Meteo API connected
+* Temperature, humidity, wind, and radiation data retrieved
+* Thermal Stress Engine currently under development
 
-Don't overcomplicate the MVP.
-**A working, scientifically defensible prototype > a huge unfinished system.**
+---
+
+## Development Approach
+
+The project will be developed incrementally:
+
+```text
+Build → Test → Integrate → Validate → Demo
+```
+
+The primary focus is on developing a working and scientifically defensible MVP before adding additional features.
