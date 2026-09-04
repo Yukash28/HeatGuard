@@ -1,4 +1,5 @@
 import requests
+from heat_index import calculate_heat_index
 
 latitude = 12.9716
 longitude = 77.5946
@@ -25,10 +26,16 @@ data = response.json()
 hourly = data["hourly"]
 
 for i in range(10):
+    temp = hourly["temperature_2m"][i]
+    humidity = hourly["relative_humidity_2m"][i]
+
+    heat_index = calculate_heat_index(temp, humidity)
+
     print(
         hourly["time"][i],
-        "| Temp:", hourly["temperature_2m"][i],
-        "| Humidity:", hourly["relative_humidity_2m"][i],
+        "| Temp:", temp,
+        "| Humidity:", humidity,
         "| Wind:", hourly["wind_speed_10m"][i],
-        "| Radiation:", hourly["shortwave_radiation"][i]
+        "| Radiation:", hourly["shortwave_radiation"][i],
+        "| Heat Index:", heat_index
     )
