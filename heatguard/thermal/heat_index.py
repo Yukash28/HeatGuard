@@ -1,6 +1,15 @@
-#heat index is the temperature that takes the account for all the variables such as temperature, humidity, wind speed and radiation. It is the perceived temperature that a person feels when exposed to the sun and other environmental factors. The heat index is calculated using a formula that takes into account the temperature and humidity levels, and it can be used to determine the risk of heat-related illnesses such as heat exhaustion and heat stroke.
+from numbers import Real
 
 def calculate_heat_index(temp_c, humidity):
+    if not isinstance(temp_c, Real) or not isinstance(humidity, Real):
+        raise TypeError("temperature and humidity must be numeric")
+
+    if not -50 <= temp_c <= 60:
+        raise ValueError("temperature must be between -50 and 60 C")
+
+    if not 0 <= humidity <= 100:
+        raise ValueError("humidity must be between 0 and 100 percent")
+
     temp_f = (temp_c * 9 / 5) + 32
 
     if temp_f < 80:

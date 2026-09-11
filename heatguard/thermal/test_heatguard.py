@@ -70,3 +70,19 @@ def test_calculate_risk_both_low():
 
 def test_risk_level_string_formatting():
     assert str(RiskLevel.EXTREME_CAUTION) == "Extreme Caution"
+
+from wbgt import calculate_wbgt
+
+
+def test_wbgt_night():
+    result = calculate_wbgt(
+        temperature_c=25.0,
+        humidity=80.0,
+        wind_kmh=10.0,
+        radiation=0.0,
+        pressure_hpa=912.0,
+        direct_radiation=0.0,
+        timestamp="2026-09-10T02:00"
+    )
+
+    assert 20.0 < result < 25.0
