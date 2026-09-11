@@ -6,9 +6,16 @@ __pycache__/
 .idea/
 .pytest_cache/
 .streamlit/secrets.toml
-data/
+data/raw/
+data/processed/
+data/features/
+data/labels/
+data/*.db
+data/*.db-wal
+data/*.db-shm
 *.db
 *.db-wal
 *.db-shm
 *.sqlite
 *.sqlite3
+

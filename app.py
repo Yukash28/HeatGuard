@@ -17,8 +17,9 @@ from typing import Any, Dict, List, Tuple
 import os
 import uuid
 import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
+
+BASE_DIR = Path(__file__).resolve().parent
 
 from heatguard.risk.engine import assess_hourly_forecast_risk
 from heatguard.risk.models import OccupationalRiskLevel, RiskAssessmentResult
@@ -577,7 +578,7 @@ if current_view == "ML Heat-Wave Model & Backtesting":
         "Live Inference & YoY Attribution",
     ])
 
-    results_json = Path("data/results/backtest_summary_2024.json")
+    results_json = BASE_DIR / "data" / "results" / "backtest_summary_2024.json"
 
     with ml_tab1:
         st.subheader("Model Performance vs Simple Baselines (Test Year: 2024)")
@@ -675,26 +676,31 @@ if current_view == "ML Heat-Wave Model & Backtesting":
         st.caption("Visual proof of model stability and error bounds during actual heat waves.")
 
         img_col1, img_col2 = st.columns(2)
+        plot_degrad = BASE_DIR / "data" / "results" / "plots" / "mae_horizon_degradation.png"
+        plot_scatter = BASE_DIR / "data" / "results" / "plots" / "actual_vs_predicted_tmax_1d.png"
+        plot_delhi = BASE_DIR / "data" / "results" / "plots" / "delhi_summer_2024_timeseries.png"
+        plot_cm = BASE_DIR / "data" / "results" / "plots" / "confusion_matrix_1d.png"
+
         with img_col1:
             st.markdown("##### 1. Error Degradation Across Horizons")
-            if Path("data/results/plots/mae_horizon_degradation.png").exists():
-                st.image("data/results/plots/mae_horizon_degradation.png", use_container_width=True)
+            if plot_degrad.exists():
+                st.image(str(plot_degrad), use_container_width=True)
             st.caption("ML models outperform both Persistence and YoY baselines across 3d, 5d, and 7d horizons.")
 
         with img_col2:
             st.markdown("##### 2. Actual vs Predicted Tmax (1-Day Ahead)")
-            if Path("data/results/plots/actual_vs_predicted_tmax_1d.png").exists():
-                st.image("data/results/plots/actual_vs_predicted_tmax_1d.png", use_container_width=True)
+            if plot_scatter.exists():
+                st.image(str(plot_scatter), use_container_width=True)
             st.caption("Strong 1:1 correlation with red markers highlighting confirmed IMD heat-wave events.")
 
         st.markdown("##### 3. New Delhi Extreme Heat Wave Period (Summer 2024)")
-        if Path("data/results/plots/delhi_summer_2024_timeseries.png").exists():
-            st.image("data/results/plots/delhi_summer_2024_timeseries.png", use_container_width=True)
+        if plot_delhi.exists():
+            st.image(str(plot_delhi), use_container_width=True)
         st.caption("Model tracks daily surges above 45°C with heat-wave probability approaching 90–100%.")
 
         st.markdown("##### 4. Heat-Wave Confusion Matrix")
-        if Path("data/results/plots/confusion_matrix_1d.png").exists():
-            st.image("data/results/plots/confusion_matrix_1d.png", width=500)
+        if plot_cm.exists():
+            st.image(str(plot_cm), width=500)
 
     with ml_tab3:
         st.subheader("Live Inference & Year-Over-Year Attribution Engine")
