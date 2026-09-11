@@ -16,7 +16,10 @@ change in these values is worth investigating before you trust it.
 
 import pytest
 
-from wbgt import calculate_wbgt
+try:
+    from heatguard.thermal.wbgt import calculate_wbgt
+except ImportError:
+    from wbgt import calculate_wbgt
 
 
 # Fixed reference conditions (Bengaluru coordinates, matching wbgt.py's

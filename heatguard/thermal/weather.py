@@ -1,138 +1,143 @@
+"""
+Thermal stress pipeline integrating weather retrieval, WBGT, and heat risk models.
+"""
+
 from datetime import datetime
+from pathlib import Path
+import sys
+from typing import Any, Dict, List
 
-import requests
+# Ensure project root is importable when executed directly
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
-from heat_index import calculate_heat_index
-from risk import calculate_risk
-from wbgt import calculate_wbgt
-
-OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
-
-HOURLY_FIELDS = [
-    "temperature_2m",
-    "relative_humidity_2m",
-    "wind_speed_10m",
-    "shortwave_radiation",
-    "surface_pressure",
-    "direct_normal_irradiance",
-]
-
-
-class WeatherFetchError(Exception):
-    """Raised when the forecast API can't be reached or returns bad data."""
-
-
-def fetch_hourly_forecast(latitude, longitude, timezone="Asia/Kolkata", forecast_days=5):
-    """Fetch raw hourly forecast data from Open-Meteo."""
-    params = {
-        "latitude": latitude,
-        "longitude": longitude,
-        "hourly": HOURLY_FIELDS,
-        "forecast_days": forecast_days,
-        "timezone": timezone,
-    }
-
-    try:
-        response = requests.get(OPEN_METEO_URL, params=params, timeout=10)
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        raise WeatherFetchError(f"Could not fetch forecast: {exc}") from exc
-
-    data = response.json()
-
-    if "hourly" not in data:
-        raise WeatherFetchError(f"Unexpected API response: {data}")
-
-    return data["hourly"]
+try:
+    from heatguard.thermal.heat_index import calculate_heat_index
+    from heatguard.thermal.risk import calculate_risk
+    from heatguard.thermal.validation import HourlyThermalResult
+    from heatguard.thermal.wbgt import calculate_wbgt
+    from heatguard.weather.client import (
+        OPEN_METEO_URL,
+        REQUIRED_HOURLY_FIELDS as HOURLY_FIELDS,
+        OpenMeteoClient,
+        WeatherFetchError,
+        fetch_hourly_forecast as fetch_weather_forecast,
+    )
+    from heatguard.weather.models import HourlyForecast, HourlyWeatherRecord
+except ImportError:
+    from heat_index import calculate_heat_index
+    from risk import calculate_risk
+    from validation import HourlyThermalResult
+    from wbgt import calculate_wbgt
+    from heatguard.weather.client import (
+        OPEN_METEO_URL,
+        REQUIRED_HOURLY_FIELDS as HOURLY_FIELDS,
+        OpenMeteoClient,
+        WeatherFetchError,
+        fetch_hourly_forecast as fetch_weather_forecast,
+    )
+    from heatguard.weather.models import HourlyForecast, HourlyWeatherRecord
 
 
-def _hour_has_complete_data(hourly, i):
-    """Skip hours where any required field is missing/null."""
-    return all(hourly[field][i] is not None for field in HOURLY_FIELDS)
-
-
-def get_hourly_risk_forecast(
-    latitude,
-    longitude,
-    timezone="Asia/Kolkata",
-    hours_ahead=24,
-    daylight_only=False,
-):
+def compute_hourly_thermal_stress(
+    forecast: HourlyForecast,
+    hours_ahead: int = 24,
+    daylight_only: bool = False,
+) -> List[HourlyThermalResult]:
     """
-    Fetch the forecast and compute heat index, WBGT, and risk level for
-    each hour in the requested window.
+    Compute WBGT, Heat Index, and risk classifications for each record in a forecast.
 
-    Returns a list of dicts, one per hour, e.g.:
-        {
-            "timestamp": "2026-09-10T14:00",
-            "temp_c": 33.2,
-            "humidity": 58,
-            "wind_kmh": 11.4,
-            "heat_index_c": 41.7,
-            "wbgt_c": 30.1,
-            "heat_index_risk": RiskLevel.EXTREME_CAUTION,
-            "wbgt_risk": RiskLevel.EXTREME_CAUTION,
-            "risk_verdict": RiskLevel.EXTREME_CAUTION,
-        }
+    Parameters:
+        forecast: HourlyForecast containing validated HourlyWeatherRecord entries
+        hours_ahead: maximum number of hours to process
+        daylight_only: whether to restrict calculation to daytime hours (06:00 to 18:00)
 
-    Hours with missing data from the API are skipped rather than crashing
-    the whole run.
+    Returns:
+        List of structured HourlyThermalResult dataclasses.
     """
-    hourly = fetch_hourly_forecast(latitude, longitude, timezone=timezone)
+    records_to_process = forecast.records[:hours_ahead]
+    results: List[HourlyThermalResult] = []
 
-    n_available = len(hourly["time"])
-    n_hours = min(hours_ahead, n_available)
-
-    results = []
-
-    for i in range(n_hours):
-        if not _hour_has_complete_data(hourly, i):
-            continue
-
-        timestamp = hourly["time"][i]
-
+    for rec in records_to_process:
         if daylight_only:
-            hour = datetime.fromisoformat(timestamp).hour
-            if hour < 6 or hour > 18:
-                continue
+            try:
+                hour = datetime.fromisoformat(rec.timestamp).hour
+                if hour < 6 or hour > 18:
+                    continue
+            except (ValueError, TypeError):
+                pass
 
-        temp = hourly["temperature_2m"][i]
-        humidity = hourly["relative_humidity_2m"][i]
-        wind = hourly["wind_speed_10m"][i]
-        radiation = hourly["shortwave_radiation"][i]
-        pressure = hourly["surface_pressure"][i]
-        direct_radiation = hourly["direct_normal_irradiance"][i]
-
-        heat_index = calculate_heat_index(temp, humidity)
+        heat_index = calculate_heat_index(rec.temperature_c, rec.relative_humidity)
 
         wbgt = calculate_wbgt(
-            temperature_c=temp,
-            humidity=humidity,
-            wind_kmh=wind,
-            radiation=radiation,
-            pressure_hpa=pressure,
-            direct_radiation=direct_radiation,
-            timestamp=timestamp,
+            temperature_c=rec.temperature_c,
+            humidity=rec.relative_humidity,
+            wind_kmh=rec.wind_speed_kmh,
+            radiation=rec.shortwave_radiation,
+            pressure_hpa=rec.surface_pressure_hpa,
+            direct_radiation=rec.direct_normal_irradiance,
+            timestamp=rec.timestamp,
+            latitude=forecast.latitude,
+            longitude=forecast.longitude,
+            timezone=forecast.timezone,
         )
 
         risk = calculate_risk(heat_index, wbgt)
 
-        results.append({
-            "timestamp": timestamp,
-            "temp_c": temp,
-            "humidity": humidity,
-            "wind_kmh": wind,
-            "heat_index_c": heat_index,
-            "wbgt_c": wbgt,
-            "heat_index_risk": risk["heat_index_level"],
-            "wbgt_risk": risk["wbgt_level"],
-            "risk_verdict": risk["verdict"],
-        })
+        results.append(
+            HourlyThermalResult(
+                timestamp=rec.timestamp,
+                temp_c=rec.temperature_c,
+                humidity=rec.relative_humidity,
+                wind_kmh=rec.wind_speed_kmh,
+                heat_index_c=heat_index,
+                wbgt_c=wbgt,
+                heat_index_risk=risk["heat_index_level"],
+                wbgt_risk=risk["wbgt_level"],
+                risk_verdict=risk["verdict"],
+                data_source=forecast.data_source,
+                is_fallback=forecast.is_fallback,
+            )
+        )
 
     return results
 
 
-def _print_forecast(results):
+def get_hourly_risk_forecast(
+    latitude: float,
+    longitude: float,
+    timezone: str = "Asia/Kolkata",
+    hours_ahead: int = 24,
+    daylight_only: bool = False,
+    forecast_days: int = 5,
+) -> List[Dict[str, Any]]:
+    """
+    Fetch forecast and compute thermal stress & risk for each hour.
+    Returns standard list of dictionaries for complete backward compatibility.
+    """
+    client = OpenMeteoClient()
+    forecast = client.fetch_hourly_forecast(
+        latitude=latitude,
+        longitude=longitude,
+        timezone=timezone,
+        forecast_days=forecast_days,
+    )
+
+    thermal_results = compute_hourly_thermal_stress(
+        forecast=forecast,
+        hours_ahead=hours_ahead,
+        daylight_only=daylight_only,
+    )
+
+    return [res.to_dict() for res in thermal_results]
+
+
+# Retain legacy functional alias for backward compatibility
+fetch_hourly_forecast = fetch_weather_forecast
+
+
+def _print_forecast(results: List[Dict[str, Any]]) -> None:
     for r in results:
         print(
             r["timestamp"],
@@ -150,8 +155,8 @@ if __name__ == "__main__":
     LONGITUDE = 77.5946
 
     try:
-        forecast = get_hourly_risk_forecast(LATITUDE, LONGITUDE, hours_ahead=10)
+        forecast_output = get_hourly_risk_forecast(LATITUDE, LONGITUDE, hours_ahead=10)
     except WeatherFetchError as exc:
         print(f"Error: {exc}")
     else:
-        _print_forecast(forecast)
+        _print_forecast(forecast_output)

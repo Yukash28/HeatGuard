@@ -9,8 +9,12 @@ truth (e.g. NOAA's HeatRisk or a published Liljegren-model comparison).
 
 import pytest
 
-from heat_index import calculate_heat_index
-from risk import RiskLevel, calculate_risk, classify_heat_index, classify_wbgt
+try:
+    from heatguard.thermal.heat_index import calculate_heat_index
+    from heatguard.thermal.risk import RiskLevel, calculate_risk, classify_heat_index, classify_wbgt
+except ImportError:
+    from heat_index import calculate_heat_index
+    from risk import RiskLevel, calculate_risk, classify_heat_index, classify_wbgt
 
 
 # --- heat_index.py -----------------------------------------------------
@@ -71,7 +75,10 @@ def test_calculate_risk_both_low():
 def test_risk_level_string_formatting():
     assert str(RiskLevel.EXTREME_CAUTION) == "Extreme Caution"
 
-from wbgt import calculate_wbgt
+try:
+    from heatguard.thermal.wbgt import calculate_wbgt
+except ImportError:
+    from wbgt import calculate_wbgt
 
 
 def test_wbgt_night():

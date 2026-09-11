@@ -1,5 +1,9 @@
+streamlit
+pandas
 numpy
 requests
 thermofeel
 earthkit-meteo
 tzdata
+plotly
+SQLAlchemy
