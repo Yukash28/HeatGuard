@@ -110,7 +110,6 @@ MIGRATION_1_UP: List[str] = [
     "CREATE INDEX IF NOT EXISTS idx_action_site_ts ON action_plans(site_id, timestamp);",
 ]
 
-# Migration registry ordered by version number
 MIGRATIONS: Dict[int, Dict[str, object]] = {
     1: {
         "description": "Initial core schema for organizations, sites, workforce, weather, WBGT, risk, and action plans",

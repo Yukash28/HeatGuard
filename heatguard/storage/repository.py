@@ -779,3 +779,5 @@ class HeatGuardRepository:
             self.save_workforce_profile(wf)
 
         logger.info("Successfully seeded %d worksites for ABC Construction.", len(presets))
+
+

@@ -7,3 +7,6 @@ earthkit-meteo
 tzdata
 plotly
 SQLAlchemy
+scikit-learn
+xgboost
+scipy

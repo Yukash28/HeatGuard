@@ -227,3 +227,5 @@ class ActionPlanRecord:
             return json.loads(self.controls_json)
         except Exception:
             return []
+
+
