@@ -1,0 +1,5 @@
+numpy
+requests
+thermofeel
+earthkit-meteo
+tzdata
